@@ -1,20 +1,25 @@
 #ifndef MOTOR_CONTROLLER_H
 #define MOTOR_CONTROLLER_H
 
+#include <Arduino.h>
+
 class motorController
 {
 private:
-    int enable;
-    char pole1;
-    char pole2;
-    bool poleSense1;
-    bool poleSense2;
+    char enableAddress;
+    char poleAddress1;
+    char poleAddress2;
+
+    int velocity;
+    bool polaritySense1;
+    bool polaritySense2;
 public:
-    motorController(char pole1, char pole2);
+    motorController(char pole1, char pole2, char enable);
     ~motorController();
     
-    void changePoleSense(bool sense);
+    void changePolaritySense(bool sense);
     void changeVelocity(int velocity);
+    void turnOff();
     void run();
 };
 
