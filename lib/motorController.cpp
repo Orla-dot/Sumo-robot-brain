@@ -1,16 +1,18 @@
 #include "motorController.h"
 
+// 
 motorController::motorController(char pole1, char pole2, char enable) {
-    poleAddress1 = pole1;
-    poleAddress2 = pole2;
-    enableAddress = enable;
-
-    pinMode(poleAddress1, OUTPUT);
-    pinMode(poleAddress2, OUTPUT);
-    pinMode(enableAddress, OUTPUT);
+    setPole1(pole1);
+    setPole2(pole2);
+    setEnable(enable);
 }
-motorController::~motorController();
-    
+motorController::~motorController() {}
+
+// public controller
+void motorController::changeSenseEVelocity(bool sense, int velocity) {
+    changePolaritySense(sense);
+    changeVelocity(velocity);
+}
 void motorController::changePolaritySense(bool sense) {
     polaritySense1 =  sense;
     polaritySense1 = !sense;
@@ -26,4 +28,18 @@ void motorController::run() {
     digitalWrite(poleAddress1, polaritySense1);
     digitalWrite(poleAddress2, polaritySense2);
     analogWrite(enableAddress, velocity);
+}
+
+// privated variables
+void motorController::setPole1(char pole1) {
+    poleAddress1 = pole1;
+    pinMode(poleAddress1, OUTPUT);
+}
+void motorController::setPole2(char pole2) {
+    poleAddress2 = pole2;
+    pinMode(poleAddress2, OUTPUT);
+}
+void motorController::setEnable(char enable) {
+    enableAddress = enable;
+    pinMode(enableAddress, OUTPUT);
 }

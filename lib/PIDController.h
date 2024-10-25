@@ -35,11 +35,12 @@ public:
     double returnP();
     double returnI();
     double returnD();
-    void rangeOfIntegral(int max, int min);
-    void rangeOfOutput(int max, int min);
+    void rangeOfIntegral(double min, double max);
+    void rangeOfOutput(double min, double max);
     void setSampleTime(uint32_t newTime);
 
-    int controll(int error);
+    double controll(double error);
+    double controll(double error, uint32_t sampleTime);
 };
 
 #endif

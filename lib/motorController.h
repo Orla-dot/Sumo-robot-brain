@@ -13,10 +13,16 @@ private:
     int velocity;
     bool polaritySense1;
     bool polaritySense2;
+
+    void setPole1(char pole1);
+    void setPole2(char pole1);
+    void setEnable(char enable);
+
 public:
     motorController(char pole1, char pole2, char enable);
     ~motorController();
     
+    void changeSenseEVelocity(bool sense, int velocity);
     void changePolaritySense(bool sense);
     void changeVelocity(int velocity);
     void turnOff();

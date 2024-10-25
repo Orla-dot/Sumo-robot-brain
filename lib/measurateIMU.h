@@ -9,17 +9,18 @@ private:
     float roll  , pitch , yaw;
     float alpha;
 
+    float LowPassFilter(float value);
+
 public:
     measurateIMU(float alpha);
     ~measurateIMU();
 
     void updateAngle(float accIMU[3], float gyroIMU[3], float deltaTime);
     void updateVelocity(float accIMU[3], float deltaTime);
+    void updatePosition(float accIMU[3], float deltaTime);
     void returnAngle(float *gyroX, float *gyroY, float *gyroZ);
     void returnVelocity(float *vlcX, float *vlcY, float *avlcZ);
     void returnPosition(float *posX, float *posY, float *posZ);
-
-    float LowPassFilter(float value);
 };
 
 #endif

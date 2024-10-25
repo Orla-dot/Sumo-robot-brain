@@ -19,19 +19,18 @@ double PID::returnP() {return p_output;}
 double PID::returnI() {return i_output;}
 double PID::returnD() {return d_output;}
 
-void PID::rangeOfIntegral(int max, int min) {
+void PID::rangeOfIntegral(double min, double max) {
     if (max <= min) return;
 
     integralMax = max;
     integralMin = min;
 }
-void PID::rangeOfOutput(int max, int min) {
+void PID::rangeOfOutput(double min, double max) {
     if (max <= min) return;
 
     outputMax = max;
     outputMin = min;
 }
-
 void PID::setSampleTime(uint32_t newTime) {
     if (newTime == 0) return;
 
@@ -48,7 +47,7 @@ void PID::setSampleTime(uint32_t newTime) {
     sampleTime = newTime;
 }
 
-int PID::controll(int error) {
+double PID::controll(double error) {
     double currentTime = millis();
 
     if (currentTime - previousTime >= sampleTime) {
@@ -64,13 +63,32 @@ int PID::controll(int error) {
         if (K_d != 0) {
             d_output = K_d * ((error - previousError)/(sampleTime));
             previousTime = currentTime;
+            previousError = error;
         }
 
-        int pid_output = p_output + i_output + d_output;
-
-        if (pid_output > outputMax) pid_output = outputMax;
-        if (pid_output < outputMin) pid_output = outputMin;
+        double pid_output = p_output + i_output + d_output;
+        pid_output = (max(pid_output, outputMax), outputMin);
 
         return pid_output;
     }
+}
+double PID::controll(double error, uint32_t sampleTime) {
+    // proportional calculation
+    if (K_p != 0) {
+        p_output = K_p * error;
+    }
+    // integral calculation
+    if (K_i != 0) {
+        i_output += K_i * error;
+    }
+    // derivat calculation
+    if (K_d != 0) {
+        d_output = K_d * ((error - previousError)/(sampleTime));
+        previousError = error;
+    }
+
+    double pid_output = p_output + i_output + d_output;
+    pid_output = (max(pid_output, outputMax), outputMin);
+
+    return pid_output;
 }
