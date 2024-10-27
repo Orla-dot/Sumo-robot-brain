@@ -22,9 +22,9 @@ public:
     motorController(char pole1, char pole2, char enable);
     ~motorController();
     
-    void changeSenseEVelocity(bool sense, int velocity);
+    void changeVelocitySensed(int veloc);
     void changePolaritySense(bool sense);
-    void changeVelocity(int velocity);
+    void changeVelocity(int veloc);
     void turnOff();
     void run();
 };

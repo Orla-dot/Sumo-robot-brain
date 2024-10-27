@@ -9,16 +9,16 @@ motorController::motorController(char pole1, char pole2, char enable) {
 motorController::~motorController() {}
 
 // public controller
-void motorController::changeSenseEVelocity(bool sense, int velocity) {
-    changePolaritySense(sense);
-    changeVelocity(velocity);
+void motorController::changeVelocitySensed(int veloc) {
+    changePolaritySense(veloc > 0);
+    changeVelocity(veloc);
 }
 void motorController::changePolaritySense(bool sense) {
     polaritySense1 =  sense;
     polaritySense1 = !sense;
 }
-void motorController::changeVelocity(int velocity) {
-    velocity = velocity;
+void motorController::changeVelocity(int veloc) {
+    velocity = min(abs(veloc), 255);
 }
 void motorController::turnOff() {
     polaritySense1 = LOW;

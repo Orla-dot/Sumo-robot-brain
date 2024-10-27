@@ -1,65 +1,125 @@
 #include <Arduino.h>
+#include <SharpIR.h>
 #include "..\lib\measurateIMU.h"
-#include "..\lib\PIDController.h"
 #include "..\lib\motorController.h"
 
-// motors controllers
-motorController motor1(22, 23, 2);
-motorController motor2(24, 25, 3);
-motorController motor3(26, 27, 4);
-motorController motor4(28, 29, 5);
-// controllers of the robot
-PID controllerX(10, 0, 0.2);
-PID controllerY(10, 0, 0.2);
-PID controllerYAW(10, 0, 0.2);
+// OBS:
+//   verificar se os pinos estão conecta dos da forma correta,
+//   faça o teste de desvio mencionado à cima para fazer a ver
+//   ificação.
+
+// motores da esquerda e direita:2
+motorController motorDireito(22, 23, 2);
+motorController motorEsquerdo(24, 25, 3);
+
+// pino do sensor de distancia:2222
+// OBS:
+//    em cima do sensor existe uma numeração indicando o model
+//    o do sensor, verifique a numeração e deixe ele colocado 
+//    corretamente.
+SharpIR sensorDistancia(SharpIR::GP2Y0A21YK0F, A0);
+
+// pinos dos infra vermelhos:
+char IVermelhoDireito  = A1;
+char IvermelhoEsquerdo = A2;
+
+// a constante de rotação:
+// - influencia no momento em que o sumo está sentindo os seus
+//   sensores na circunferencia da arena.
+const double constanteRotação = 0.9/1000; // k/1000
+
+// variaveis:
+// -  variaveis de distancia
+int distancia = 0;            // cm
+int distanciaInimigo = 60;    // cm
+// -  variaveis de velocidade
+int velocidadeDireita  = 0;   // PWM
+int velocidadeEsquerda = 0;   // PWM
+int velocidadeMedia = 128;    // PWM
+// -  variaveis da arena
+bool bordaEsquerda = false;   // true/false
+bool bordaDireita  = false;   // true/false
+// -  variaveis de tempo
+double tempoSCorrente = 0;    // s
+double tempoSPassado  = 0;    // s
+double tempoSDireita  = 0;    // s
+double tempoSEsquerda = 0;    // s
 
 
 
 void setup() {
-    controllerX.rangeOfOutput(-255, 255);
-    controllerY.rangeOfOutput(-255, 255);
-    controllerYAW.rangeOfOutput(-255, 255);
+    // iniciando os sensores IR
+    pinMode(IVermelhoDireito , INPUT);
+    pinMode(IvermelhoEsquerdo, INPUT);
 
-
+    // desligando inicialmente os motores
+    motorDireito.turnOff();
+    motorEsquerdo.turnOff();
 }
 
 void loop() {
+    // adicionar distancia
+    distancia = sensorDistancia.getDistance();
+    // varificar os sensores IR em ambos os lados
+    bordaEsquerda = digitalRead(IvermelhoEsquerdo);
+    bordaDireita  = digitalRead(IVermelhoDireito );
+
+
+    tempoSCorrente = millis(); // definir tempo
+
+    // varificando se há algum possivel inimigo no raio
+    if (distancia < distanciaInimigo) {
+        attacar();
+    }
+    else {
+        encontrar();
+    }
+
+    tempoSPassado = tempoSCorrente; // redefinir tempo passado
+
+
+    // definir as velocidades nos enables e mudar a polaridade
+    motorDireito.changeVelocitySensed(velocidadeDireita);   // definir na direita
+    motorEsquerdo.changeVelocitySensed(velocidadeEsquerda); // definir da esquerda
+    motorDireito.run();  // acelerar motor
+    motorEsquerdo.run(); // acelerar motor
 }
 
 
-void pathPlanning(bool signal, bool arena1, bool arena2, bool arena3, bool arena4) {
 
+void encontrar() {
+    // iniciar rotação do robô para encontrar os oponentes na arena
+    velocidadeDireita  =  velocidadeMedia;
+    velocidadeEsquerda = -velocidadeMedia;
+
+
+    // caso o valor seja verdadeiro...
+    if (bordaDireita)
+    {
+        velocidadeDireita  = -velocidadeMedia/4; // mover o robô para traz
+        velocidadeEsquerda = -velocidadeMedia;   // mover o robô para traz
+        delay(500);
+    }
+    // caso o valor seja verdadeiro...
+    if (bordaEsquerda)
+    {
+        velocidadeDireita  = -velocidadeMedia;   // mover o robô para traz
+        velocidadeEsquerda = -velocidadeMedia/4; // mover o robô para traz
+        delay(500);
+    }
 }
 
-void internalDynamics(double xController, double yController, double yawController) {
-    // calculating the velocity of all the wheels
-    char velocityMotor1 = xController + yController + yawController;
-    char velocityMotor2 = xController - yController + yawController;
-    char velocityMotor3 = xController + yController - yawController;
-    char velocityMotor4 = xController - yController - yawController;
-    
-    // seting the polarity/sense of the motors
-    bool polarityMotor1 = (velocityMotor1 < 0);
-    bool polarityMotor2 = (velocityMotor2 < 0);
-    bool polarityMotor3 = (velocityMotor3 < 0);
-    bool polarityMotor4 = (velocityMotor4 < 0);
 
-    // turnung absolut and limiting a value
-    velocityMotor1 = max(abs(velocityMotor1), 255);
-    velocityMotor2 = max(abs(velocityMotor2), 255);
-    velocityMotor3 = max(abs(velocityMotor3), 255);
-    velocityMotor4 = max(abs(velocityMotor4), 255);
 
-    // changing variables
-    // - changing polarity & velocity
-    motor1.changeSenseEVelocity(polarityMotor1, velocityMotor1);
-    motor2.changeSenseEVelocity(polarityMotor2, velocityMotor2);
-    motor3.changeSenseEVelocity(polarityMotor3, velocityMotor3);
-    motor4.changeSenseEVelocity(polarityMotor4, velocityMotor4);
+void attacar() {
+    // Verificar o sensor da esquerda
+    if (bordaEsquerda) tempoSEsquerda += (tempoSPassado - tempoSCorrente); // adicionar o tempo
+    else tempoSEsquerda = 0;                                               // resetar o tempo
+    // Verificar o sensor da direita
+    if (bordaDireita ) tempoSDireita  += (tempoSPassado - tempoSCorrente); // adicionar o tempo
+    else tempoSDireita  = 0;                                               // resetar o tempo
 
-    // run
-    motor1.run();
-    motor2.run();
-    motor3.run();
-    motor4.run();
+    // calcular velocidade das rodas
+    velocidadeDireita  = velocidadeMedia + (constanteRotação* (tempoSDireita  - tempoSEsquerda));
+    velocidadeEsquerda = velocidadeMedia + (constanteRotação* (tempoSEsquerda - tempoSDireita ));
 }
